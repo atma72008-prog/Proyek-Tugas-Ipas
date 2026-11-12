@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI THERMAL LAB</title>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@500;800&family=Permanent+Marker&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{colors:{'street-pink':'#ff007f','street-cyan':'#00f0ff','street-lime':'#39ff14','street-yellow':'#ffe600'},fontFamily:{bangers:['Bangers','cursive'],marker:['Permanent Marker','cursive'],mono:['JetBrains Mono','monospace']}}}}</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{--bg:#0d0b1a;--fg:#f4f4f8;--card:#1a1633}
+body.light{--bg:#fff7e0;--fg:#161226;--card:#fff}
+body{background:var(--bg);color:var(--fg);font-family:Inter,sans-serif}
+h1,h2,h3{font-family:Bangers,cursive;letter-spacing:.05em}
+.card{background:var(--card);border:3px solid #000;box-shadow:5px 5px 0 #ff007f;padding:12px}
+.card.c{box-shadow:5px 5px 0 #00f0ff}.card.l{box-shadow:5px 5px 0 #39ff14}.card.y{box-shadow:5px 5px 0 #ffe600}
+.btn{border:3px solid #000;box-shadow:3px 3px 0 #000;padding:5px 12px;font-family:'Permanent Marker',cursive;background:#ffe600;color:#000;transform:rotate(-1.5deg);cursor:pointer;margin:2px}
+.btn:nth-child(even){transform:rotate(1.5deg)}.btn:hover{background:#ff007f;color:#fff}.btn.on{background:#00f0ff}
+.btn:focus-visible,input:focus-visible{outline:3px solid #ff007f;outline-offset:2px}
+.num{font-family:'JetBrains Mono',monospace;font-weight:800}
+.tab{display:none}.tab.act{display:block}
+.neon{text-shadow:0 0 8px #ff007f,0 0 20px #ff007f}
+#view{position:relative;height:520px;border:3px solid #000;overflow:hidden}
+#view canvas{display:block}#hud{position:absolute;left:8px;top:8px;z-index:5;display:none;background:rgba(7,11,20,.82);color:#67e8f9;font:700 13px "JetBrains Mono",monospace;padding:6px 10px;border-radius:10px;border:1px solid #22d3ee;pointer-events:none}
+#lab{position:absolute;inset:0;pointer-events:none}
+#lab div{position:absolute;width:120px;font:700 11px 'JetBrains Mono';background:#000;color:#39ff14;padding:2px 4px;border:1px solid #39ff14}
+#lab svg{position:absolute;inset:0;width:100%;height:100%}
+#ov{position:fixed;inset:0;background:rgba(255,0,40,.28);display:none;align-items:center;justify-content:center;pointer-events:none;z-index:50;font-family:Bangers;font-size:3rem;color:#fff;text-shadow:3px 3px #000}
+input[type=range]{width:100%;accent-color:#ff007f}
+.opt{display:block;padding:4px 8px;border:2px solid #000;margin:3px 0;cursor:pointer}
+@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#070b14;--fg:#e6edf7;--card:rgba(16,24,42,.72)}
+body.light{--bg:#eef3fb;--fg:#0f172a;--card:rgba(255,255,255,.88)}
+body{background:radial-gradient(1100px 600px at 85% -10%,rgba(139,92,246,.2),transparent),radial-gradient(900px 500px at 0 0,rgba(34,211,238,.15),transparent),var(--bg)}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:linear-gradient(rgba(120,160,220,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(120,160,220,.07) 1px,transparent 1px);background-size:44px 44px}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif;letter-spacing:-.01em;font-weight:700}
+.card,.card.c,.card.l,.card.y{border:1px solid rgba(120,170,255,.22);border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.05);backdrop-filter:blur(10px)}
+.card{border-top:2px solid #8b5cf6}.card.c{border-top:2px solid #22d3ee}.card.l{border-top:2px solid #34d399}.card.y{border-top:2px solid #fbbf24}
+.btn{transform:none!important;border:1px solid rgba(120,170,255,.35);box-shadow:none;border-radius:999px;font-family:Inter,sans-serif;font-weight:600;font-size:13px;background:rgba(30,41,70,.7);color:var(--fg);padding:6px 14px}
+body.light .btn{background:#fff}
+.btn:hover{background:#22d3ee;color:#001018}.btn.on{background:linear-gradient(90deg,#22d3ee,#8b5cf6);color:#fff;border-color:transparent}
+#view{border-radius:16px;border:1px solid rgba(120,170,255,.3);box-shadow:0 0 40px rgba(34,211,238,.18)}
+#lab div{border-radius:6px;background:rgba(7,11,20,.88);color:#67e8f9;border:1px solid #22d3ee}
+.neon{text-shadow:0 0 18px rgba(34,211,238,.55)}
+.opt{border:1px solid rgba(120,170,255,.3);border-radius:10px}
+#ov{font-family:'Space Grotesk',sans-serif}
+</style></head>
+<body class="min-h-screen">
+<div id="ov"><span>⚠️ OVERHEAT! ⚠️</span></div>
+<header class="p-3 flex flex-wrap items-center justify-between gap-2">
+ <h1 class="text-3xl md:text-4xl neon">AI Thermal Lab <span class="text-sm font-normal opacity-70 ml-2">Belajar pendinginan chip AI · untuk pelajar SMA &amp; umum</span></h1>
+ <div class="flex flex-wrap items-center gap-1"><button class="btn" id="tourBtn">🧭 Tur Pemandu</button><button class="btn" id="theme">☀️ Mode Terang</button></div>
+</header>
+<nav class="px-3 flex flex-wrap" id="nav">
+ <button class="btn on" data-t="sim">SIMULASI</button><button class="btn" data-t="edu">RUMUS & CARA HITUNG</button><button class="btn" data-t="mis">TANTANGAN MISI</button><button class="btn" data-t="quiz">KUIS EVALUASI</button><button class="btn" data-t="gal">GALERI CHIP</button><button class="btn" data-t="risk">⚠️ RISIKO DEKAT DATA CENTER</button>
+</nav>
+<main class="p-3 max-w-7xl mx-auto">
+
+<section id="sim" class="tab act">
+ <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+  <div class="card"><div class="text-xs">Suhu Chip AI</div><div class="num text-3xl" id="mT">--</div></div>
+  <div class="card c"><div class="text-xs">Faktor Pendingin (F)</div><div class="num text-3xl" id="mF">--</div></div>
+  <div class="card y"><div class="text-xs">Tambahan Panas Chip</div><div class="num text-3xl" id="mA">--</div></div>
+  <div class="card l"><div class="text-xs">Status Chip AI</div><div class="font-marker text-xl" id="mS">--</div></div>
+ </div>
+ <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+ <div class="card"><div class="text-xs">Performa Chip</div><div class="num text-2xl" id="mP">--</div></div>
+ <div class="card c"><div class="text-xs">PUE Pendingin</div><div class="num text-2xl" id="mU">--</div></div>
+ <div class="card y"><div class="text-xs">Daya Total</div><div class="num text-2xl" id="mD">--</div></div>
+ <div class="card l"><div class="text-xs">Biaya Listrik / Bulan</div><div class="num text-2xl" id="mC">--</div></div>
+</div>
+<div class="card y mb-4"><b>💡 Saran otomatis:</b> <span id="tip"></span></div>
+<div class="card mb-4"><h3 class="text-xl mb-2">Perbandingan Live 3 Pendingin</h3><div id="cmp" class="num text-sm"></div></div>
+<div class="grid lg:grid-cols-3 gap-4">
+  <div class="lg:col-span-2">
+   <div class="mb-2">
+    <button class="btn" id="b3d">🔬 3D Chip</button><button class="btn on" id="b2d">🏘️ Lingkungan 3D</button><button class="btn" id="eHome">🏠 Dari Rumah Warga</button><button class="btn" id="eDrone">🚁 Drone</button><button class="btn on" id="mDay">☀️ Siang</button><button class="btn" id="mNight">🌙 Malam</button><button class="btn on" id="mHeat">🌡️ Peta Panas</button>
+    <button class="btn" id="pOrb">Orbit 360°</button><button class="btn" id="pTop">Atas (Die)</button><button class="btn" id="pBot">Bawah (BGA)</button><button class="btn" id="pExp">Eksplosi Instan</button><button class="btn" id="zIn">Zoom +</button><button class="btn" id="zOut">Zoom −</button><button class="btn on" id="pLab">Label ON</button>
+   </div>
+   <div id="view"><div id="hud"></div><div id="lab"><svg id="svg"></svg></div><canvas id="c2d" style="display:none;position:absolute;inset:0"></canvas></div>
+   <div class="card mt-3"><label class="font-marker">Exploded View: <span class="num" id="exV">0</span>%</label><input type="range" id="ex" min="0" max="100" value="0"></div>
+   <div class="card y mt-3"><h3 class="text-xl">☀️ Siang vs 🌙 Malam <span class="text-xs font-sans">dibandingkan dengan pengaturan sekarang</span></h3><div id="dn" class="text-sm"></div></div>
+   <div class="card l mt-3"><h3 class="text-xl">Dampak ke Warga Sekitar (live) <span class="text-xs font-sans">simulasi edukatif, skala 5.000 chip</span></h3><div id="rk" class="text-sm"></div></div>
+   <div class="card c mt-3"><h3 class="text-xl">Grafik Suhu Realtime <span class="text-xs font-sans">(garis merah = throttling 85°C)</span></h3><canvas id="gr" width="700" height="140" class="w-full"></canvas></div>
+  </div>
+  <div class="space-y-3">
+   <div class="card y"><h3 class="text-xl mb-1">Panel Kontrol Thermal</h3>
+    <div id="modes"><button class="btn on" data-m="air">Udara F=0.15</button><button class="btn" data-m="dlc">Liquid DLC F=0.05</button><button class="btn" data-m="imm">Rendam F=0.02</button></div>
+    <div class="mt-2 text-xs opacity-70">Preset Beban</div><div><button class="btn" data-p="300,25,100">Idle</button><button class="btn" data-p="600,25,80">Inference</button><button class="btn" data-p="800,30,100">Training</button><button class="btn" data-p="1000,35,100">Overclock</button><button class="btn" id="auto">⚡ Auto-pilih pendingin</button></div>
+    <label class="block mt-2 text-sm">Watt Chip (TDP): <span class="num" id="wV"></span> W</label><input type="range" id="watt" min="300" max="1000" step="10" value="600">
+    <label class="block mt-2 text-sm">Suhu Air/Ruang: <span class="num" id="aV"></span> °C</label><input type="range" id="amb" min="18" max="35" value="25">
+    <label class="block mt-2 text-sm">Kecepatan Pompa/Kipas: <span class="num" id="sV"></span>%</label><input type="range" id="spd" min="20" max="100" value="100">
+    <div class="mt-3 pt-2 border-t border-slate-500/30"><label class="block text-sm">🕒 Jam: <span class="num" id="hV"></span></label><input type="range" id="hr" min="0" max="24" step="0.25" value="13"><button class="btn" id="hPlay">▶ Putar Hari</button><label class="text-sm"><input type="checkbox" id="autoT" checked> Suhu udara ikut jam</label>
+    <label class="block mt-2 text-sm">🏠 Jarak ke rumah warga: <span class="num" id="dV"></span> m</label><input type="range" id="dist" min="30" max="600" step="10" value="120"></div>
+   </div>
+   <div class="card l"><h3 class="text-xl">Live Math Steps</h3><div class="num text-sm space-y-2 mt-1"><div id="m1"></div><div id="m2"></div></div></div>
+   <div class="card"><h3 class="text-xl">Visibilitas Layer</h3><div id="lyr" class="text-sm"></div></div>
+  </div>
+ </div>
+</section>
+
+<section id="edu" class="tab space-y-4">
+ <div class="card"><h2 class="text-3xl mb-2">Kenapa Chip AI Cepat Panas?</h2>
+ <p>Chip AI (GPU) mengerjakan jutaan hitungan tiap detik. Listrik yang masuk hampir semuanya berubah jadi <b>panas</b>, seperti setrika atau kompor listrik. Satu chip AI modern bisa memakai <b>700 sampai 1000 Watt</b>, kira-kira sebesar 10 lampu rumah, tapi panasnya terkumpul di area sebesar kuku.</p>
+ <p class="mt-2"><b>Analogi mudah:</b> chip itu kompor, pendingin itu air atau kipas yang mengambil panasnya. Makin besar api (Watt), makin kuat pendingin yang kamu butuhkan.</p></div>
+<div class="card c"><h2 class="text-3xl mb-3">Perjalanan Panas: Dari Chip ke Luar</h2>
+ <div class="flex flex-wrap items-stretch gap-2 text-sm">
+  <div class="p-2 rounded-xl border border-cyan-400/40"><b>1. Die</b><br>Silikon tempat hitungan terjadi. Di sinilah panas lahir.</div><div class="self-center">➜</div>
+  <div class="p-2 rounded-xl border border-cyan-400/40"><b>2. TIM</b><br>Pasta tipis yang menambal celah mikroskopis agar panas mudah lewat.</div><div class="self-center">➜</div>
+  <div class="p-2 rounded-xl border border-cyan-400/40"><b>3. IHS</b><br>Tutup logam yang menyebarkan panas ke area lebih luas.</div><div class="self-center">➜</div>
+  <div class="p-2 rounded-xl border border-cyan-400/40"><b>4. Pendingin</b><br>Udara, cairan di cold plate, atau cairan rendam membawa panas pergi.</div></div>
+ <p class="mt-2 text-sm">Buka tab SIMULASI, geser <i>Exploded View</i>, lalu lihat urutan lapisan ini satu per satu.</p></div>
+<div class="card y"><h2 class="text-3xl mb-2">Apa Itu Thermal Throttling?</h2>
+ <p>Saat suhu chip melewati sekitar <b>85°C</b>, chip menurunkan kecepatannya sendiri agar tidak rusak. Akibatnya pelatihan AI jadi lambat walau listrik tetap terpakai. Karena itu pendingin yang baik berarti kinerja yang stabil, bukan hanya chip yang adem.</p></div>
+<div class="card c"><h2 class="text-3xl">Rumus Gampang: 2 Langkah</h2><div id="kx" class="my-3 text-xl"></div></div>
+ <div class="grid md:grid-cols-2 gap-4">
+  <div class="card y"><h3 class="text-2xl">Langkah 1: Cari Panas Tambahan</h3><p>Kalikan beban chip (Watt) dengan Faktor Pendingin (F). Makin kecil F, makin mudah panas dibuang. Contoh: 500 W × 0.15 = 75 °C.</p></div>
+  <div class="card l"><h3 class="text-2xl">Langkah 2: Tambahkan ke Suhu Air</h3><p>Jumlahkan panas tambahan dengan suhu air atau ruang. Contoh: 25 °C + 75 °C = 100 °C, di atas batas 85 °C.</p></div>
+ </div>
+ <div class="grid md:grid-cols-3 gap-4">
+  <div class="card"><h3 class="text-2xl">Udara (F=0.15)</h3><p>Udara menyerap panas dengan buruk, jadi sirip dan kipas harus bekerja keras.</p><p class="num mt-2">500 W → +75 °C → 100 °C (25 °C ruang)</p></div>
+  <div class="card c"><h3 class="text-2xl">Liquid DLC (F=0.05)</h3><p>Air mengalir lewat cold plate langsung di atas chip dan membawa panas jauh lebih cepat.</p><p class="num mt-2">500 W → +25 °C → 50 °C</p></div>
+  <div class="card l"><h3 class="text-2xl">Immersion (F=0.02)</h3><p>Seluruh board terendam cairan dielektrik, sehingga panas dibuang dari semua sisi.</p><p class="num mt-2">500 W → +10 °C → 35 °C</p></div>
+ </div>
+<div class="card"><h2 class="text-3xl mb-2">Kenapa Cairan Lebih Jago dari Udara?</h2>
+ <p>Air menghantar panas sekitar 20 kali lebih baik daripada udara, dan satu liter air bisa menyimpan panas ribuan kali lebih banyak daripada satu liter udara. Jadi dengan aliran yang sama, cairan membawa panas jauh lebih banyak. Itulah sebabnya nilai F cairan lebih kecil.</p></div>
+<div class="grid md:grid-cols-3 gap-4">
+ <div class="card"><h3 class="text-xl">Udara: plus dan minus</h3><p class="text-sm">👍 Murah, sederhana, mudah dirawat.<br>👎 Berisik, boros listrik kipas, kewalahan di atas sekitar 500 W.</p></div>
+ <div class="card c"><h3 class="text-xl">Liquid DLC: plus dan minus</h3><p class="text-sm">👍 Kuat untuk rak server padat, lebih hemat energi.<br>👎 Perlu pipa dan pompa, risiko bocor harus dijaga.</p></div>
+ <div class="card l"><h3 class="text-xl">Immersion: plus dan minus</h3><p class="text-sm">👍 Paling dingin dan paling hemat energi, nyaris tanpa kipas.<br>👎 Biaya awal tinggi, perawatan lebih rumit.</p></div></div>
+<div class="card y"><h2 class="text-3xl mb-2">4 Cara Menurunkan Suhu Chip</h2>
+ <ul class="list-disc pl-5 space-y-1 text-sm"><li><b>Kurangi Watt:</b> kecilkan beban chip atau batasi daya.</li><li><b>Turunkan suhu air/ruang:</b> setiap 1°C lebih dingin menurunkan suhu chip 1°C.</li><li><b>Naikkan kecepatan kipas atau pompa:</b> aliran lebih deras membuat F efektif lebih kecil.</li><li><b>Ganti teknologi:</b> dari Udara ke DLC atau Immersion memberi penurunan terbesar.</li></ul>
+ <button class="btn mt-3" onclick="document.querySelector('#nav [data-t=sim]').click()">Coba di Simulasi</button></div>
+<div class="card c"><h2 class="text-3xl mb-2">Istilah Penting</h2><div class="space-y-2 text-sm">
+ <details><summary class="cursor-pointer font-semibold">TDP (Thermal Design Power)</summary>Perkiraan panas maksimum chip dalam Watt yang harus sanggup dibuang pendingin.</details>
+ <details><summary class="cursor-pointer font-semibold">Cold plate</summary>Blok logam berongga di atas chip. Cairan mengalir di dalamnya dan menyerap panas.</details>
+ <details><summary class="cursor-pointer font-semibold">Cairan dielektrik</summary>Cairan yang tidak menghantar listrik, sehingga aman untuk merendam komponen elektronik.</details>
+ <details><summary class="cursor-pointer font-semibold">PUE (Power Usage Effectiveness)</summary>Perbandingan total listrik fasilitas dengan listrik yang dipakai chip. Makin dekat ke 1.0, makin efisien.</details>
+ <details><summary class="cursor-pointer font-semibold">BGA (Ball Grid Array)</summary>Matriks bola solder di bawah chip yang menyambungkannya ke motherboard.</details>
+ <details><summary class="cursor-pointer font-semibold">HBM (High Bandwidth Memory)</summary>Memori super cepat yang menempel di samping die. Ia ikut panas, jadi ikut didinginkan.</details></div></div>
+</section>
+
+<section id="mis" class="tab">
+ <div class="card y mb-4 flex justify-between items-center"><h2 class="text-3xl">Tantangan Misi</h2><div class="font-marker text-2xl text-street-yellow" id="stars">⭐ 0 / 3 Bintang</div></div>
+ <div class="grid md:grid-cols-3 gap-4" id="mgrid"></div>
+ <p class="text-sm mt-3">Ubah parameter di tab SIMULASI saat misi aktif. Timer berhenti dan mengulang dari 0 bila kondisi terlanggar.</p>
+</section>
+
+<section id="quiz" class="tab"><div class="card c"><h2 class="text-3xl mb-2">Kuis Evaluasi</h2><div id="qz"></div>
+ <button class="btn" id="qChk">Periksa Jawaban</button><button class="btn" id="qRst">Ulangi Kuis</button>
+ <div id="qFb" class="mt-3 font-marker text-xl"></div></div></section>
+<section id="gal" class="tab"><div class="card c mb-4"><h2 class="text-3xl">Galeri Chip AI (HD)</h2><p class="text-sm opacity-80">Tiga gambar resolusi tinggi (1600×1000). Warna inti chip pada gambar ke-3 mengikuti suhu simulasi di tab SIMULASI. Klik Unduh untuk menyimpan gambar PNG.</p></div>
+<div class="card y mb-4"><h3 class="text-xl mb-1">Cara Membaca Gambar</h3><ul class="text-sm list-disc pl-5 space-y-1"><li><b>Titik pink dan garis cyan</b> menunjuk ke bagian chip, dan kotak di ujungnya menyebut namanya.</li><li><b>Warna inti chip</b> (gambar 3): <span style="color:#39ff14">hijau</span> = di bawah 65°C (optimal), <span style="color:#ffe600">kuning</span> = 65–85°C (hangat), <span style="color:#ff2a2a">merah</span> = di atas 85°C (overheat).</li><li>Gambar ini <b>ilustrasi yang disederhanakan</b>. Chip asli punya miliaran transistor, jauh lebih rumit.</li></ul></div>
+<div class="grid md:grid-cols-2 gap-4">
+ <div class="card"><h3 class="text-xl mb-1">1. Chip Tampak Atas</h3><canvas id="gA" class="w-full rounded-xl"></canvas><p class="text-sm my-2">Dari atas, kita hanya melihat tutup logam yang menutupi inti chip. Pendingin (kipas, cold plate, atau cairan rendam) menempel dan bekerja di permukaan ini.</p><ul class="text-sm list-disc pl-5 my-2 space-y-1"><li><b>IHS (tutup logam):</b> melindungi inti chip yang rapuh dan menyebarkan panas ke area yang lebih luas.</li><li><b>Papan PCB hijau:</b> alas tempat semua komponen dipasang dan dihubungkan oleh jalur tembaga.</li><li><b>Kapasitor SMD:</b> komponen mungil penyimpan listrik cadangan agar tegangan chip stabil.</li><li><b>Takik Pin-1:</b> penanda arah agar chip dipasang tidak terbalik.</li></ul><button class="btn on" onclick="dl('gA','chip-tampak-atas')">⬇ Unduh PNG</button></div>
+ <div class="card l"><h3 class="text-xl mb-1">2. Chip Tampak Bawah</h3><canvas id="gB" class="w-full rounded-xl"></canvas><p class="text-sm my-2">Sisi bawah adalah "kaki" chip. Alih-alih kaki logam, chip modern memakai bola solder kecil yang tersusun rapi seperti kotak telur.</p><ul class="text-sm list-disc pl-5 my-2 space-y-1"><li><b>Bola solder (BGA):</b> tiap bola membawa satu sinyal data atau aliran listrik ke motherboard. Chip AI memakai ribuan bola.</li><li><b>Zona kapasitor di tengah:</b> area kosong bola yang diisi kapasitor, supaya listrik dekat dengan inti chip.</li><li><b>Penanda Pin-1:</b> menunjukkan sudut acuan untuk membaca urutan bola.</li><li><b>Kaitan dengan pendinginan:</b> sebagian besar panas keluar lewat sisi atas, jadi pendingin dipasang di atas, bukan di bawah.</li></ul><button class="btn on" onclick="dl('gB','chip-tampak-bawah')">⬇ Unduh PNG</button></div>
+ <div class="card y md:col-span-2"><h3 class="text-xl mb-1">3. Pusat Chip (Die): tempat panas lahir</h3><canvas id="gC" class="w-full rounded-xl"></canvas><p class="text-sm my-2">Ini bagian terpenting: potongan silikon kecil tempat semua hitungan AI terjadi. Listrik yang dipakai di sini hampir seluruhnya berubah menjadi panas.</p><ul class="text-sm list-disc pl-5 my-2 space-y-1"><li><b>Inti hitung (core):</b> kotak-kotak kecil yang mengerjakan perhitungan. Pada gambar ada 64 inti, sedangkan chip asli punya jauh lebih banyak.</li><li><b>Garis cyan:</b> jalur penghubung yang membagi data antar inti.</li><li><b>Memori HBM:</b> tumpukan memori sangat cepat di sisi die. Ia ikut panas dan harus ikut didinginkan.</li><li><b>Titik terpanas:</b> bagian tengah die, karena dikelilingi inti yang bekerja, jadi panasnya sulit keluar.</li></ul><p class="text-sm my-2"><b>Coba sendiri:</b> buka tab SIMULASI, naikkan Watt atau pilih Udara, lalu kembali ke sini. Inti akan berubah dari hijau ke kuning, lalu merah. Ganti ke Liquid DLC atau Rendam, dan inti kembali hijau.</p><button class="btn on" onclick="dl('gC','chip-pusat-die')">⬇ Unduh PNG</button></div>
+</div></section>
+<section id="risk" class="tab space-y-4">
+ <div class="card"><h2 class="text-3xl mb-2">Risiko Tinggal di Dekat Data Center AI</h2><p>Data center AI adalah bangunan yang menampung ribuan chip. Chip-chip itu memakai listrik dan air dalam jumlah besar serta menghasilkan panas dan suara terus-menerus. Dampaknya paling terasa bagi rumah yang dekat. Buka tab SIMULASI, geser <b>jarak rumah</b>, <b>jam</b>, dan jenis pendingin, lalu lihat bagaimana angkanya berubah. Angka di simulasi adalah perkiraan edukatif, bukan hasil ukur lapangan.</p></div>
+ <div class="grid md:grid-cols-2 gap-4">
+  <div class="card y"><h3 class="text-2xl">🔊 Kebisingan</h3><p class="text-sm">Kipas, chiller, dan genset berbunyi 24 jam. Pendingin udara paling berisik, cairan lebih tenang. Dengung frekuensi rendah sulit diredam dan bisa mengganggu tidur, terutama malam hari saat suasana sekitar sepi. Dalam simulasi, kebisingan turun sekitar 6 dB tiap jarak digandakan.</p></div>
+  <div class="card c"><h3 class="text-2xl">🌡️ Panas buangan</h3><p class="text-sm">Hampir semua listrik berubah menjadi panas yang dibuang ke udara sekitar. Rumah di dekatnya bisa merasakan udara lebih hangat, apalagi siang hari ketika suhu luar sudah tinggi dan pendingin bekerja lebih keras. Malam lebih adem, tetapi suara jadi lebih mengganggu.</p></div>
+  <div class="card l"><h3 class="text-2xl">💧 Pemakaian air</h3><p class="text-sm">Menara pendingin penguapan menghabiskan air dalam jumlah besar. Bila berebut dengan sumur atau PDAM warga, muka air tanah bisa turun dan air bersih jadi langka, terutama di musim kemarau. Pendingin tertutup atau air daur ulang mengurangi risikonya.</p></div>
+  <div class="card"><h3 class="text-2xl">⚡ Beban listrik</h3><p class="text-sm">Satu fasilitas bisa memakai daya setara ribuan rumah. Jika jaringan setempat terbatas, risiko tegangan turun atau pemadaman bagi warga meningkat, dan pembangunan gardu serta kabel tegangan tinggi baru mungkin diperlukan.</p></div>
+  <div class="card y"><h3 class="text-2xl">🛢️ Genset diesel</h3><p class="text-sm">Genset cadangan menghasilkan asap (partikel dan NOx) serta suara keras saat diuji berkala atau saat listrik padam. Penyimpanan solar juga berisiko tumpah dan menyulut api.</p></div>
+  <div class="card c"><h3 class="text-2xl">🔥 Kebakaran &amp; kebocoran</h3><p class="text-sm">Baterai lithium-ion cadangan dapat terbakar sulit dipadamkan. Pendingin cairan bisa bocor: cairan dielektrik tidak menghantar listrik tetapi mencemari tanah, sedangkan campuran glikol beracun bila tertelan. Pemadam berbasis gas juga perlu prosedur evakuasi.</p></div>
+  <div class="card l"><h3 class="text-2xl">🧲 Medan elektromagnetik</h3><p class="text-sm">Di luar pagar, paparan EMF dari data center umumnya sangat kecil dan belum terbukti berbahaya pada jarak permukiman. Sumber yang perlu dijaga jaraknya adalah trafo dan kabel tegangan tinggi. Ini kekhawatiran yang sering muncul, tetapi bukan risiko utama dibanding bising, air, dan listrik.</p></div>
+  <div class="card"><h3 class="text-2xl">🏘️ Sosial &amp; lingkungan</h3><p class="text-sm">Lalu lintas truk saat konstruksi, berkurangnya lahan resapan dan risiko banjir, pemandangan berubah, serta kekhawatiran nilai properti. Setelah beroperasi, jumlah lapangan kerja tetap biasanya sedikit dibanding ukuran bangunannya.</p></div>
+ </div>
+ <div class="card y"><h2 class="text-2xl mb-1">Cara Mengurangi Risiko</h2><ul class="list-disc pl-5 text-sm space-y-1"><li><b>Jaga jarak (setback)</b> dari rumah. Di simulasi, coba geser jarak hingga status warga berubah menjadi AMAN.</li><li><b>Pilih pendingin cairan atau rendam</b> agar lebih senyap dan membuang panas lebih sedikit ke udara sekitar.</li><li><b>Dinding peredam, pagar hijau, dan kipas rendah putaran</b> terutama untuk malam hari.</li><li><b>Air daur ulang atau pendingin tertutup</b> supaya tidak bersaing dengan air warga.</li><li><b>Genset standar emisi, panel surya, dan baterai berpengaman api.</b></li><li><b>Libatkan warga:</b> sosialisasi, AMDAL, pemantauan bising dan air yang hasilnya terbuka, serta jalur pengaduan.</li></ul></div>
+ <div class="card c"><h2 class="text-2xl mb-1">Diskusi Kelas</h2><p class="text-sm">Kalau kamu warga, berapa jarak minimum yang kamu minta? Apakah jawabanmu berbeda untuk siang dan malam, dan untuk pendingin udara dibanding cairan? Coba buktikan dengan simulasi.</p></div>
+</section>
+<div id="tour" style="display:none;position:fixed;right:14px;bottom:14px;z-index:70;max-width:320px" class="card c"><div class="font-bold" id="tT"></div><p class="text-sm my-2" id="tD"></p><button class="btn on" id="tN">Lanjut</button><button class="btn" id="tX">Tutup</button></div>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const LAY=[['Socket Motherboard','#555a66'],['Pin Solder BGA','#c0c0c0'],['Substrate PCB','#0a7a3a'],['Kapasitor SMD','#c9a227'],['Silicon Die & HBM','#4a4a6a'],['TIM / Paste','#dddddd'],['IHS Lid Metal','#b0b8c4'],['Modul Pendingin','#3a8fb7']];
+const BY=[0,.25,.5,.65,.8,.95,1.1,1.45];
+const MODES={air:.15,dlc:.05,imm:.02};
+const S={hr:13,dist:120,play:false,mode:'air',watt:600,amb:25,spd:100,temp:25,ex:0,exT:0,view:'3d',hist:[],labels:true};
+function calc(){const f=MODES[S.mode]*(1.5-.5*S.spd/100),add=S.watt*f;return{f,add,t:S.amb+add}}
+const heat=t=>t<65?'#39ff14':t<85?'#ffe600':'#ff2a2a';
+
+/* ---------- THREE ---------- */
+const view=$('view'),R=new THREE.WebGLRenderer({antialias:true});view.prepend(R.domElement);
+const scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(45,1,.1,100);cam.position.set(5,4,6);
+const ctl=new THREE.OrbitControls(cam,R.domElement);ctl.target.set(0,.9,0);ctl.autoRotateSpeed=3;
+scene.add(new THREE.AmbientLight(0xffffff,.7));const dl=new THREE.DirectionalLight(0xffffff,.8);dl.position.set(4,8,5);scene.add(dl);
+const mat=c=>new THREE.MeshStandardMaterial({color:c,metalness:.3,roughness:.5});
+const box=(w,h,d,c,x=0,y=0,z=0)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(c));m.position.set(x,y,z);return m};
+const G=LAY.map(()=>{const g=new THREE.Group();scene.add(g);return g});
+G[0].add(box(4.4,.2,4.4,LAY[0][1]));
+const ib=new THREE.InstancedMesh(new THREE.SphereGeometry(.07,8,6),mat('#c0c0c0'),100),dm=new THREE.Object3D();
+for(let i=0;i<100;i++){dm.position.set((i%10-4.5)*.3,0,(Math.floor(i/10)-4.5)*.3);dm.updateMatrix();ib.setMatrixAt(i,dm.matrix)}G[1].add(ib);
+G[2].add(box(3.4,.12,3.4,LAY[2][1]));
+for(let i=0;i<10;i++)G[3].add(box(.18,.1,.1,LAY[3][1],(i%5-2)*.6,0,i<5?-1.5:1.5));
+const die=box(1.4,.15,1.4,'#39ff14');G[4].add(die);
+[[-1.1,-.5],[-1.1,.5],[1.1,-.5],[1.1,.5]].forEach(p=>G[4].add(box(.5,.15,.8,'#6a6a9a',p[0],0,p[1])));
+G[5].add(box(2.6,.04,2.6,LAY[5][1]));G[6].add(box(3,.14,3,LAY[6][1]));
+G[7].add(box(3,.3,3,LAY[7][1]));for(let i=0;i<7;i++)G[7].add(box(.08,.35,2.8,'#8cc7e6',(i-3)*.4,.3,0));
+/* chip detail */
+const cv=(w,f)=>{const c=document.createElement('canvas');c.width=c.height=w;f(c.getContext('2d'),w);return new THREE.CanvasTexture(c)};
+const plane=(w,h,t,g,x,y,z,col)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:t,color:col||0xffffff,transparent:true}));m.rotation.x=-Math.PI/2;m.position.set(x,y,z);g.add(m);return m};
+plane(3.4,3.4,cv(512,(x,s)=>{x.fillStyle='#0b6b34';x.fillRect(0,0,s,s);x.strokeStyle='#d4af37';x.lineWidth=2;for(let i=0;i<40;i++){x.beginPath();x.moveTo(20+i*12,0);x.lineTo(20+i*12,60+i%5*10);x.moveTo(20+i*12,s);x.lineTo(20+i*12,s-60-i%5*10);x.stroke()}x.fillStyle='#d4af37';for(let i=0;i<24;i++)for(let j=0;j<24;j++)if(i<2||i>21||j<2||j>21)x.fillRect(30+i*19,30+j*19,6,6)}),G[2],0,.07,0);
+const dieTop=plane(1.4,1.4,cv(256,(x,s)=>{x.fillStyle='#555';x.fillRect(0,0,s,s);x.fillStyle='#fff';for(let i=0;i<4;i++)for(let j=0;j<4;j++)x.fillRect(16+i*58,16+j*58,46,46);x.strokeStyle='#fff';x.lineWidth=4;x.strokeRect(2,2,s-4,s-4)}),G[4],0,.08,0);
+const hbmT=cv(128,(x,s)=>{x.fillStyle='#2b3350';x.fillRect(0,0,s,s);x.fillStyle='#8aa0ff';for(let i=0;i<8;i++)x.fillRect(8,10+i*15,s-16,8)});
+[[-1.1,-.5],[-1.1,.5],[1.1,-.5],[1.1,.5]].forEach(p=>plane(.5,.8,hbmT,G[4],p[0],.08,p[1]));
+G[6].children[0].material.transparent=true;G[6].children[0].material.opacity=.4;
+plane(3,3,cv(512,(x,s)=>{x.strokeStyle='#e2e8f0';x.lineWidth=5;x.strokeRect(24,24,s-48,s-48);x.fillStyle='#e2e8f0';x.beginPath();x.moveTo(24,24);x.lineTo(84,24);x.lineTo(24,84);x.fill();x.textAlign='center';x.font='bold 84px Space Grotesk,sans-serif';x.fillText('AI-X1',s/2,s/2+4);x.font='26px JetBrains Mono,monospace';x.fillText('NEURAL ACCELERATOR',s/2,s/2+48);x.fillText('THERMAL LAB',s/2,s/2+84)}),G[6],0,.08,0);
+G[7].children.forEach(m=>{m.material.transparent=true;m.material.opacity=.3});
+const gh=new THREE.GridHelper(10,20,0x22d3ee,0x1e293b);gh.position.y=-.2;scene.add(gh);
+const hl=new THREE.PointLight(0x39ff14,1.4,7);hl.position.set(0,1.4,0);scene.add(hl);
+/* particles */
+const PN=150,pp=new Float32Array(PN*3),pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(pp,3));
+const pm=new THREE.PointsMaterial({size:.1,color:0xffe600});scene.add(new THREE.Points(pg,pm));
+const ph=[...Array(PN)].map(()=>Math.random());
+function parts(dt){const sp=.3+S.spd/100,top=G[7].position.y+.5;
+ for(let i=0;i<PN;i++){ph[i]=(ph[i]+dt*sp*.3)%1;const p=ph[i];let x,y,z;
+  if(S.mode=='air'){x=-2.5+p*5;y=top+Math.sin(i)*.3;z=(i%10-4.5)*.3}
+  else if(S.mode=='dlc'){const a=p*6.283,r=1.8+(i%3)*.1;x=Math.cos(a)*r;z=Math.sin(a)*r;y=top-.3+(i%5)*.1}
+  else{x=((i*37)%100/100-.5)*4;z=((i*53)%100/100-.5)*4;y=p*3.2}
+  pp.set([x,y,z],i*3)}
+ pg.attributes.position.needsUpdate=true;pm.color.set(S.mode=='air'?'#ffe600':S.mode=='dlc'?'#00f0ff':'#39ff14')}
+/* labels */
+const SV=$('svg'),LB=LAY.map((l,i)=>{const d=document.createElement('div');d.textContent=l[0];$('lab').appendChild(d);
+ const ln=document.createElementNS('http://www.w3.org/2000/svg','polyline');ln.setAttribute('stroke','#22d3ee');ln.setAttribute('stroke-width','2');ln.setAttribute('fill','none');ln.setAttribute('stroke-linejoin','round');
+ const ci=document.createElementNS('http://www.w3.org/2000/svg','circle');ci.setAttribute('r',5);ci.setAttribute('fill','#ff007f');ci.setAttribute('stroke','#fff');ci.setAttribute('stroke-width','2');SV.append(ln,ci);return{d,ln,ci}});
+function labels(){const w=view.clientWidth,h=view.clientHeight,show=S.labels&&S.ex>.05&&S.view=='3d';
+ const P=LB.map((e,i)=>{const on=show&&G[i].visible;e.d.style.display=e.ln.style.display=e.ci.style.display=on?'block':'none';if(!on)return null;
+  const v=G[i].position.clone().project(cam);return{i,px:(v.x*.5+.5)*w,py:(-v.y*.5+.5)*h}});
+ [0,1].forEach(side=>{const L=P.filter(p=>p&&p.i%2==side).sort((a,b)=>a.py-b.py);let prev=-99;
+  L.forEach(p=>{p.ly=Math.max(p.py,prev+26);prev=p.ly});
+  const over=prev-(h-16);if(over>0)L.forEach(p=>p.ly-=over);
+  L.forEach(p=>{const e=LB[p.i],left=side==0,edge=left?124:w-124,el=left?edge+22:edge-22;
+   e.d.style.left=(left?4:w-124)+'px';e.d.style.top=(p.ly-10)+'px';
+   e.ln.setAttribute('points',edge+','+p.ly+' '+el+','+p.ly+' '+p.px+','+p.py);e.ci.setAttribute('cx',p.px);e.ci.setAttribute('cy',p.py)})})}
+function size(){const w=view.clientWidth,h=view.clientHeight;R.setSize(w,h);cam.aspect=w/h;cam.updateProjectionMatrix();EC.aspect=w/h;EC.updateProjectionMatrix()}
+addEventListener('resize',size);
+function bgc(){const l=document.body.classList.contains('light');scene.background=new THREE.Color(l?'#fff7e0':'#0d0b1a');return l?'#fff7e0':'#0d0b1a'}
+
+/* ---------- 2D ---------- */
+const HN=h=>{h=(h%24+24)%24;return String(h|0).padStart(2,'0')+':'+String((h%1*60)|0).padStart(2,'0')};
+const pt=h=>h<5||h>=19?'Malam':h<10?'Pagi':h<15?'Siang':'Sore';
+const dayF=h=>Math.max(0,Math.min(1,Math.sin(Math.PI*(h-6)/12)*1.6+.15));
+const ambOf=h=>Math.round(29.5+5.5*Math.sin(2*Math.PI*(h-9)/24));
+const NB={air:85,dlc:72,imm:62},HC={air:.5,dlc:.3,imm:.15},WU={air:.5,dlc:1.8,imm:.8};
+function risk(hh){hh=hh==null?S.hr:hh;const P=S.watt*PUE[S.mode]*5000/1e6,L0=NB[S.mode]+8*(S.spd/100-1)+10*Math.log10(S.watt/600),night=dayF(hh)<.3;
+ return{P,night,lim:night?45:55,noise:L0-20*Math.log10(S.dist/10),rise:P*HC[S.mode]*50/S.dist*(1.3-.3*dayF(hh)),water:P*24000*WU[S.mode]}}
+function d2(){const c=$('c2d'),x=c.getContext('2d'),w=view.clientWidth,h=view.clientHeight,dp=Math.min(3,Math.max(2,devicePixelRatio||1)),t=performance.now()/1000,H=S.hr,df=dayF(H),T=S.temp,col=heat(T),k=Math.min(1,w/760),gy=h*.76,R=risk(),mode=S.mode,fs=S.spd/100;c.width=w*dp;c.height=h*dp;c.style.width=w+'px';c.style.height=h+'px';x.setTransform(dp,0,0,dp,0,0);x.imageSmoothingQuality='high';
+ const mx=(a,b,q)=>'rgb('+a.map((v,i)=>Math.round(v+(b[i]-v)*q))+')';
+ let g=x.createLinearGradient(0,0,0,gy);g.addColorStop(0,mx([6,10,35],[60,140,220],df));g.addColorStop(1,mx([30,32,75],[200,230,250],df));x.fillStyle=g;x.fillRect(0,0,w,gy);
+ if(df<.5){x.fillStyle='rgba(255,255,255,'+(.9-df*1.8)+')';for(let i=0;i<60;i++)x.fillRect(i*137%w,i*71%(gy*.7),2,2)}
+ const sun=H>=6&&H<18,p=sun?(H-6)/12:((H<6?H+24:H)-18)/12;
+ x.fillStyle=sun?'#ffd84a':'#e8eefc';x.shadowColor=sun?'#ffd84a':'#9db4ff';x.shadowBlur=30;x.beginPath();x.arc(w*.06+p*w*.88,gy-Math.sin(p*Math.PI)*gy*.78,16,0,7);x.fill();x.shadowBlur=0;
+ x.fillStyle=mx([14,40,28],[70,160,80],df);x.fillRect(0,gy,w,h-gy);x.fillStyle=mx([30,30,40],[90,90,100],df);x.fillRect(0,h-40,w,40);x.fillStyle='rgba(255,255,255,.5)';for(let i=0;i<w;i+=60)x.fillRect(i,h-21,30,3);
+ for(let i=0;i<7;i++){const tx=(i*97+25)%(w*.48);x.fillStyle='#5b3a1e';x.fillRect(tx-2,gy-16,4,16);x.fillStyle=mx([10,50,25],[30,130,50],df);x.beginPath();x.arc(tx,gy-26,14,0,7);x.fill()}
+ /* gedung */
+ const bl=w*.5,bw=w*.46,bh=h*.46,by=gy-bh,ct=30*k+4;
+ g=x.createLinearGradient(bl,0,bl+bw,0);g.addColorStop(0,mx([40,50,80],[200,210,225],df));g.addColorStop(1,mx([22,28,48],[140,150,170],df));x.fillStyle=g;x.fillRect(bl,by,bw,bh);x.strokeStyle='#000';x.lineWidth=2;x.strokeRect(bl,by,bw,bh);
+ x.fillStyle='#0b1020';x.fillRect(bl+10,by+ct,bw-20,bh-ct-10);x.fillStyle='#e6edf7';x.font='bold '+Math.round(13*Math.max(.8,k))+'px Space Grotesk,sans-serif';x.fillText('AI DATA CENTER',bl+10,by+20);
+ const nr=6,rw=(bw-30)/nr,ry=by+ct+16,rh=bh-ct-40;
+ for(let i=0;i<nr;i++){const rx=bl+16+i*rw;
+  if(mode=='imm'){x.fillStyle='rgba(80,200,255,.35)';x.fillRect(rx,ry+8,rw-8,rh-8);x.strokeStyle='#67e8f9';x.strokeRect(rx,ry+8,rw-8,rh-8);for(let b=0;b<3;b++){x.fillStyle='rgba(255,255,255,.6)';x.beginPath();x.arc(rx+8+b*10,ry+rh-((t*20+b*25+i*9)%(rh-14)),2,0,7);x.fill()}}
+  else{x.fillStyle='#1e293b';x.fillRect(rx,ry,rw-8,rh);x.strokeStyle='#475569';x.strokeRect(rx,ry,rw-8,rh)}
+  for(let j=0;j<5;j++){x.fillStyle=Math.sin(t*3+i*5+j*2)>-.6?col:'#334155';x.fillRect(rx+5,ry+14+j*((rh-24)/5),rw-18,(rh-24)/5-6)}}
+ if(mode=='dlc'){x.lineWidth=3;[['#38bdf8',6],['#fb7185',12]].forEach(a=>{x.strokeStyle=a[0];x.beginPath();x.moveTo(bl+16,ry-a[1]);x.lineTo(bl+bw-16,ry-a[1]);x.stroke()});
+  for(let i=0;i<10;i++){x.fillStyle='#fff';x.fillRect(bl+16+((t*.3*(fs+.3)+i/10)%1)*(bw-32),ry-8,3,3)}}
+ /* kipas atap */
+ const nf=mode=='air'?3:1,r=14*Math.max(.8,k);
+ for(let i=0;i<nf;i++){const fx=mode=='air'?bl+bw*(.2+i*.3):bl+bw*.5;if(mode=='dlc'){x.fillStyle='#64748b';x.fillRect(fx-26,by-34,52,34)}
+  x.fillStyle='#94a3b8';x.fillRect(fx-r-3,by-8,2*r+6,8);x.save();x.translate(fx,by-14);x.rotate(t*(mode=='imm'?2:8)*fs);x.fillStyle='#cbd5e1';for(let b=0;b<3;b++){x.rotate(2.094);x.fillRect(0,-2,r,4)}x.restore()}
+ /* buangan panas / uap */
+ const it={air:1,dlc:.55,imm:.2}[mode]*Math.min(1.3,S.watt/700),n=Math.round(26*it),reach=Math.min(bl-20,S.dist/600*bl*1.4+80);
+ for(let i=0;i<n;i++){const q=(t*.22*(.4+fs)+i/n)%1;x.fillStyle=(mode=='air'?'rgba(255,140,40,':'rgba(255,255,255,')+.5*(1-q)+')';x.beginPath();x.arc(bl+bw*.3-q*reach,by-18-Math.sin(q*3+i)*10-q*40,5+q*9,0,7);x.fill()}
+ /* bising */
+ const nz=Math.max(0,Math.min(1,(R.noise-30)/50));for(let i=0;i<3;i++){const q=(t*.5+i/3)%1;x.strokeStyle='rgba(255,230,0,'+nz*(1-q)+')';x.lineWidth=3;x.beginPath();x.arc(bl,gy-bh*.35,q*Math.min(bl,260),Math.PI*.6,Math.PI*1.4);x.stroke()}
+ /* rumah warga */
+ const hw=58*Math.max(.7,k),hr=bl-(20+(S.dist-30)/570*Math.max(0,bl-hw*3-60));
+ for(let i=0;i<3;i++){const hx=hr-hw*(i+1)-i*10,hh=hw*.7,hy=gy-hh;x.fillStyle=['#e2b07a','#d98f8f','#9ec5e0'][i];x.fillRect(hx,hy,hw,hh);x.fillStyle='#7c2d12';x.beginPath();x.moveTo(hx-5,hy);x.lineTo(hx+hw/2,hy-hw*.38);x.lineTo(hx+hw+5,hy);x.fill();
+  x.fillStyle=df<.5?'#ffe680':'#bfe3ff';x.fillRect(hx+8,hy+10,14,14);x.fillRect(hx+hw-22,hy+10,14,14);x.fillStyle='#5b3a1e';x.fillRect(hx+hw/2-6,gy-hh*.5,12,hh*.5)}
+ if(R.rise>.5){x.strokeStyle='rgba(255,120,40,'+Math.min(.7,R.rise/4)+')';x.lineWidth=2;for(let i=0;i<4;i++){x.beginPath();for(let a=0;a<=60;a+=4){const px=hr-hw*3-20+a*(hw*3+30)/60,py=gy-hw*1.25-i*9+Math.sin(a*.3+t*3+i)*3;a?x.lineTo(px,py):x.moveTo(px,py)}x.stroke()}}
+ x.font='bold 14px JetBrains Mono';x.fillStyle=R.noise>R.lim?'#ff6b6b':'#39ff14';x.fillText('🔊 '+R.noise.toFixed(0)+' dB',hr-hw*3,gy-hw*1.5-44);
+ x.strokeStyle='#fff';x.lineWidth=2;x.setLineDash([5,4]);x.beginPath();x.moveTo(hr,gy+16);x.lineTo(bl,gy+16);x.stroke();x.setLineDash([]);x.fillStyle='#fff';x.shadowColor='#000';x.shadowBlur=5;x.textAlign='center';x.fillText(S.dist+' m',(hr+bl)/2,gy+34);x.fillText('Rumah warga',hr-hw*1.5,gy+34);x.shadowBlur=0;x.textAlign='left';
+ /* HUD */
+ x.fillStyle='rgba(7,11,20,.8)';x.fillRect(8,8,Math.min(w-80,300),56);x.fillStyle='#67e8f9';x.fillText(HN(H)+' · '+pt(H).toUpperCase()+' · Udara '+S.amb+'°C',16,28);x.fillStyle=col;x.fillText('Chip '+T.toFixed(0)+'°C · '+NM[mode],16,48);
+ x.fillStyle=col;rr(x,w-60,10,48,48,8);x.fill();x.fillStyle='#000';x.textAlign='center';x.fillText('CHIP',w-36,30);x.fillText(T.toFixed(0)+'°',w-36,46);x.textAlign='left';
+ const tg=(s,px,py)=>{x.font='bold 13px Inter,sans-serif';const tw=x.measureText(s).width+16;x.fillStyle='rgba(7,11,20,.88)';rr(x,px-tw/2,py-16,tw,24,7);x.fill();x.strokeStyle='#22d3ee';x.lineWidth=1;x.stroke();x.fillStyle='#fff';x.textAlign='center';x.fillText(s,px,py);x.textAlign='left'};
+ tg({air:'Kipas & AC (udara panas keluar)',dlc:'Menara pendingin + pipa cairan',imm:'Tangki rendam + dry cooler'}[mode],bl+bw/2,by-56);tg('Rak server berisi chip AI',bl+bw/2,gy+34)}
+/* ---------- ENV 3D ---------- */
+R.setPixelRatio(Math.min(devicePixelRatio||1,2));R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;
+const ES=new THREE.Scene(),EC=new THREE.PerspectiveCamera(45,1,.5,700);EC.position.set(-42,28,52);
+const EO=new THREE.OrbitControls(EC,R.domElement);EO.target.set(2,4,0);EO.enableDamping=true;EO.maxPolarAngle=1.52;EO.minDistance=8;EO.maxDistance=200;EO.enabled=false;
+const AC=()=>S.view=='3d'?ctl:EO,AM=()=>S.view=='3d'?cam:EC;
+ES.fog=new THREE.Fog(0x78b8ec,90,330);
+const eh=new THREE.HemisphereLight(0xbcd8ff,0x335533,.8),sunL=new THREE.DirectionalLight(0xfff2d0,1.1),moonL=new THREE.DirectionalLight(0xb4c6ff,.3);ES.add(eh,sunL,moonL);
+sunL.castShadow=true;sunL.shadow.mapSize.set(2048,2048);Object.assign(sunL.shadow.camera,{left:-90,right:90,top:70,bottom:-70,far:400});sunL.shadow.bias=-.0004;sunL.shadow.camera.updateProjectionMatrix();
+const EM=(c,o)=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.8,metalness:.1},o||{}));
+const EB=(w,h,d,m,x,y,z,g)=>{const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);b.position.set(x,y,z);b.castShadow=b.receiveShadow=true;(g||ES).add(b);return b};
+function drawSpr(c,txt,col){const g=c.getContext('2d');g.clearRect(0,0,512,128);g.fillStyle='rgba(7,11,20,.9)';rr(g,4,14,504,100,24);g.fill();g.strokeStyle=col||'#22d3ee';g.lineWidth=6;g.stroke();g.fillStyle='#fff';g.font='700 50px Inter,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(txt,256,66)}
+function spr(txt,sz,col){const c=document.createElement('canvas');c.width=512;c.height=128;drawSpr(c,txt,col);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthTest:false,transparent:true}));s.scale.set(sz,sz/4,1);s.renderOrder=9;s.userData.c=c;ES.add(s);return s}
+const gMat=EM(0x3f8f45),gnd=new THREE.Mesh(new THREE.PlaneGeometry(700,700),gMat);gnd.rotation.x=-Math.PI/2;gnd.receiveShadow=true;ES.add(gnd);
+const rd=new THREE.Mesh(new THREE.PlaneGeometry(700,9),EM(0x2b2e36));rd.rotation.x=-Math.PI/2;rd.position.set(0,.05,32);rd.receiveShadow=true;ES.add(rd);
+for(let i=-17;i<18;i++){const d=new THREE.Mesh(new THREE.PlaneGeometry(3,.4),new THREE.MeshBasicMaterial({color:0xe8e8e8}));d.rotation.x=-Math.PI/2;d.position.set(i*8,.08,32);ES.add(d)}
+/* gedung */
+EB(46,.3,30,EM(0x9aa0aa),17,.15,3);EB(30,10,18,EM(0xb7bfcc),15,5.3,0);EB(30.8,.7,18.8,EM(0x6b7280),15,10.6,0);
+const glass=EM(0x111827,{emissive:0x39ff14,emissiveIntensity:.8,roughness:.3});EB(26,3.2,.2,glass,15,5.6,9.1);EB(4,5,.3,EM(0x374151),15,2.8,9.1);
+for(let i=0;i<8;i++)EB(.5,10,.4,EM(0x8b94a3),2+i*3.6,5.3,9.2);
+const sign=spr('AI DATA CENTER',18,'#22d3ee');sign.position.set(15,15.5,0);
+/* pendingin */
+const AIR=new THREE.Group(),DLC=new THREE.Group(),IMM=new THREE.Group(),fans=[];ES.add(AIR,DLC,IMM);
+function fan(g,x,y,z,r){const h=new THREE.Mesh(new THREE.CylinderGeometry(r,r,1.2,24),EM(0x6b7280));h.position.set(x,y,z);h.castShadow=true;g.add(h);const b=new THREE.Group();b.position.set(x,y+.7,z);for(let i=0;i<3;i++){const bl=new THREE.Mesh(new THREE.BoxGeometry(r*.9,.12,.5),EM(0xe5e7eb)),q=new THREE.Group();bl.position.x=r*.45;q.rotation.y=i*2.094;q.add(bl);b.add(q)}g.add(b);fans.push(b)}
+[6,15,24].forEach(x=>fan(AIR,x,11.4,-2,2.2));[-5,0,5].forEach(z=>EB(1.6,3.2,3,EM(0xd1d5db),-1.2,1.6,z,AIR));
+EB(7,6,7,EM(0x9ca3af),40,3,-4,DLC);fan(DLC,40,6.6,-4,2.8);
+[[0xef4444,2.2],[0x38bdf8,1.2]].forEach(a=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(.35,.35,6.5,12),EM(a[0],{emissive:a[0],emissiveIntensity:.3}));m.rotation.z=Math.PI/2;m.position.set(33.25,a[1],-5.2);m.castShadow=true;DLC.add(m)});
+const dots=[...Array(10)].map(()=>{const m=new THREE.Mesh(new THREE.SphereGeometry(.3,8,8),new THREE.MeshBasicMaterial({color:0xffffff}));DLC.add(m);return m});
+const ledMat=EM(0x000000,{emissive:0x39ff14,emissiveIntensity:1});
+[-6,0,6].forEach(z=>{EB(6,3.4,4.5,EM(0x67e8f9,{transparent:true,opacity:.35}),38,1.9,z,IMM);EB(4.5,2.4,3,EM(0x1f2937),38,1.7,z,IMM);EB(4.6,.3,.1,ledMat,38,2.4,z+1.6,IMM);EB(4.6,.3,.1,ledMat,38,1.4,z+1.6,IMM)});fan(IMM,15,11.4,-2,1.8);
+/* rumah warga */
+const HG=new THREE.Group(),winM=EM(0xffffcc,{emissive:0xffd866,emissiveIntensity:0});ES.add(HG);
+[0xe2b07a,0xd98f8f,0x9ec5e0,0xe8d58a,0xb9d6a0,0xd7a5d9].forEach((c,i)=>{const hx=-4-(i%3)*9,hz=-8+(i/3|0)*16;EB(6,4,6,EM(c),hx,2,hz,HG);
+ const r=new THREE.Mesh(new THREE.ConeGeometry(5,2.6,4),EM(0x8b3a1a));r.rotation.y=Math.PI/4;r.position.set(hx,5.3,hz);r.castShadow=true;HG.add(r);
+ EB(.1,1.4,1.4,winM,hx+3.05,2.6,hz-1.6,HG);EB(.1,1.4,1.4,winM,hx+3.05,2.6,hz+1.6,HG);EB(.1,2,1,EM(0x5b3a1e),hx+3.05,1,hz,HG)});
+const haze=new THREE.Mesh(new THREE.BoxGeometry(30,9,28),new THREE.MeshBasicMaterial({color:0xff7a2a,transparent:true,opacity:0,depthWrite:false}));haze.position.set(-14,5,0);HG.add(haze);
+const hLab=spr('Rumah warga',12,'#39ff14'),dLab=spr('120 m',9,'#ffffff'),dLn=EB(1,.15,.3,new THREE.MeshBasicMaterial({color:0xffffff}),0,.3,12);
+/* pohon */
+const NT=70,tr=new THREE.InstancedMesh(new THREE.CylinderGeometry(.3,.4,2,6),EM(0x5b3a1e),NT),cr=new THREE.InstancedMesh(new THREE.ConeGeometry(1.8,5,8),EM(0x2f7d3a),NT),td=new THREE.Object3D();cr.castShadow=true;
+for(let i=0;i<NT;i++){const a=(i*2654435761%1000)/1000,b=(i*40503%997)/997,sc=.8+a*.7;td.position.set(-130+a*220+(i%7)*3,1*sc,i<50?-18-b*60:40+b*30);td.scale.set(sc,sc,sc);td.updateMatrix();tr.setMatrixAt(i,td.matrix);td.position.y=4*sc;td.updateMatrix();cr.setMatrixAt(i,td.matrix)}ES.add(tr,cr);
+/* langit */
+function mkMoon(){const m=document.createElement('canvas');m.width=m.height=256;const g=m.getContext('2d'),r=g.createRadialGradient(128,128,30,128,128,128);r.addColorStop(0,'rgba(190,210,255,.55)');r.addColorStop(1,'rgba(190,210,255,0)');g.fillStyle=r;g.fillRect(0,0,256,256);
+ const c=document.createElement('canvas');c.width=c.height=256;const k=c.getContext('2d');k.fillStyle='#fff6d8';k.shadowColor='#fff6d8';k.shadowBlur=18;k.beginPath();k.arc(118,128,52,0,7);k.fill();k.shadowBlur=0;k.globalCompositeOperation='destination-out';k.beginPath();k.arc(146,114,48,0,7);k.fill();g.drawImage(c,0,0);
+ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(m),fog:false,transparent:true,depthWrite:false}));s.scale.set(34,34,1);return s}
+const sunM=new THREE.Mesh(new THREE.SphereGeometry(7,24,16),new THREE.MeshBasicMaterial({color:0xffe08a,fog:false})),moonM=mkMoon();ES.add(sunM,moonM);
+const sq=new Float32Array(1500);for(let i=0;i<500;i++){const u=Math.random()*6.283,v=Math.random()*1.2+.1;sq.set([Math.cos(u)*Math.cos(v)*300,Math.sin(v)*300,Math.sin(u)*Math.cos(v)*300],i*3)}
+const stars=new THREE.Points(new THREE.BufferGeometry().setAttribute('position',new THREE.BufferAttribute(sq,3)),new THREE.PointsMaterial({size:2.6,color:0xffffff,transparent:true,fog:false}));ES.add(stars);
+const sq2=new Float32Array(240);for(let i=0;i<80;i++){const u=Math.random()*6.283,v=Math.random()*1.1+.15;sq2.set([Math.cos(u)*Math.cos(v)*290,Math.sin(v)*290,Math.sin(u)*Math.cos(v)*290],i*3)}
+const stars2=new THREE.Points(new THREE.BufferGeometry().setAttribute('position',new THREE.BufferAttribute(sq2,3)),new THREE.PointsMaterial({size:6,color:0xfff2c0,transparent:true,fog:false,depthWrite:false}));ES.add(stars2);
+/* partikel & gelombang bising */
+const EN=240,ep=new Float32Array(EN*3),eg=new THREE.BufferGeometry();eg.setAttribute('position',new THREE.BufferAttribute(ep,3));
+const em=new THREE.PointsMaterial({size:1.6,color:0xff9a3c,transparent:true,opacity:.65,depthWrite:false});ES.add(new THREE.Points(eg,em));const eph=[...Array(EN)].map(()=>Math.random());
+const rings=[0,1,2].map(()=>{const m=new THREE.Mesh(new THREE.RingGeometry(.96,1,64),new THREE.MeshBasicMaterial({color:0xffe600,transparent:true,side:THREE.DoubleSide,depthWrite:false}));m.rotation.x=-Math.PI/2;m.position.set(15,.3,0);ES.add(m);return m});
+const hmC=document.createElement('canvas');hmC.width=hmC.height=256;{const g=hmC.getContext('2d'),r=g.createRadialGradient(128,128,10,128,128,128);r.addColorStop(0,'rgba(255,255,255,.95)');r.addColorStop(.5,'rgba(255,255,255,.4)');r.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=r;g.fillRect(0,0,256,256)}
+const hm=new THREE.Mesh(new THREE.PlaneGeometry(2,2),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(hmC),transparent:true,depthWrite:false,fog:false}));hm.rotation.x=-Math.PI/2;hm.position.set(8,.4,0);hm.renderOrder=2;ES.add(hm);
+const tLab=spr('',12,'#fff'),warmC=new THREE.Color(0xffb870),coolC=new THREE.Color(0x4a6cff);let eK3='',heatOn=true;
+const cN=new THREE.Color(0x14265a),cD=new THREE.Color(0x7ab8ee),cs=new THREE.Color(),gN=new THREE.Color(0x2e6040),gD=new THREE.Color(0x4a9a4a);let eK1='',eK2='';
+function envUpdate(dt,t){const H=S.hr,df=dayF(H),RK=risk(),md=S.mode,fs=S.spd/100,sun=H>=6&&H<18,p=sun?(H-6)/12:((H<6?H+24:H)-18)/12,a=p*Math.PI,px=-Math.cos(a)*150,py=Math.sin(a)*150+10,col=heat(S.temp);
+ cs.lerpColors(cN,cD,df);cs.lerp(warmC,df*Math.max(0,S.amb-26)/9*.18);cs.lerp(coolC,(1-df)*.08);ES.background=cs;ES.fog.color.copy(cs);gMat.color.lerpColors(gN,gD,df);
+ sunM.visible=sun;moonM.visible=!sun;(sun?sunM:moonM).position.set(px,py,60);
+ sunL.position.set(px*.8,Math.max(10,py*.8),50);sunL.intensity=df*1.25;moonL.position.set(px*.6,Math.max(25,py),40);moonL.intensity=(1-df)*1.1;eh.intensity=.45+df*.5;
+ winM.emissiveIntensity=(1-df)*1.4;stars.material.opacity=Math.max(0,1-df*2.2);stars2.material.opacity=stars.material.opacity*(.65+.35*Math.sin(t*3));glass.emissive.set(col);glass.emissiveIntensity=.5+(1-df)*.9;ledMat.emissive.set(col);
+ AIR.visible=md=='air';DLC.visible=md=='dlc';IMM.visible=md=='imm';fans.forEach(f=>f.rotation.y+=dt*(md=='imm'?3:12)*fs);
+ dots.forEach((m,i)=>{const q=(t*.35*(fs+.3)+i/10)%1,hot=i%2;m.position.set(hot?30+q*6.5:36.5-q*6.5,hot?2.2:1.2,-5.2)});
+ const gap=S.dist/8;HG.position.x=-gap;haze.material.opacity=Math.min(.3,RK.rise/14+df*Math.max(0,S.amb-27)/8*.1);
+ dLn.scale.x=gap;dLn.position.x=-gap/2;dLab.position.set(-gap/2,3.2,12);hLab.position.set(-gap-14,11,0);
+ const k1=S.dist+' m';if(k1!=eK1){eK1=k1;drawSpr(dLab.userData.c,k1,'#ffffff');dLab.material.map.needsUpdate=true}
+ const k2='Rumah warga · '+RK.noise.toFixed(0)+' dB',bad=RK.noise>RK.lim;if(k2+bad!=eK2){eK2=k2+bad;drawSpr(hLab.userData.c,k2,bad?'#ff4d4d':'#39ff14');hLab.material.map.needsUpdate=true}
+ const nz=Math.max(0,Math.min(1,(RK.noise-30)/50));rings.forEach((m,i)=>{const q=(t*.45+i/3)%1,r=8+q*(gap+40);m.scale.set(r,r,1);m.material.opacity=nz*(1-q)*.9});
+ const it={air:1,dlc:.7,imm:.35}[md]*Math.min(1.3,S.watt/700),n=Math.min(EN,Math.round(EN*it)),reach=gap+14;em.color.set(md=='air'?0xff9a3c:md=='dlc'?0xffffff:0x9ff3ff);
+ for(let i=0;i<n;i++){eph[i]=(eph[i]+dt*(.12+fs*.18))%1;const q=eph[i];let x,y,z;
+  if(md=='air'){x=-1.2-q*reach;y=1.6+q*4+Math.sin(i+t*2)*.4;z=(i%3-1)*5+Math.sin(i*3+t)*1.2}
+  else if(md=='dlc'){x=40-q*9+Math.sin(i)*1.5;y=7+q*15;z=-4+Math.cos(i*2)*1.8}
+  else{x=38+Math.sin(i)*2;y=.6+q*3.2;z=-6+(i%3)*6+Math.cos(i*5)*1.6}
+  ep[i*3]=x;ep[i*3+1]=y;ep[i*3+2]=z}
+ eg.setDrawRange(0,n);eg.attributes.position.needsUpdate=true;
+ const Tl=S.amb+RK.rise,q=Math.max(0,Math.min(1,(Tl-24)/14)),r=26+RK.rise*6+(md=='air'?14:md=='dlc'?6:0);
+ hm.visible=heatOn;hm.scale.set(r,r,1);hm.material.color.setHSL((1-q)*.6,1,.5);hm.material.opacity=.15+q*.5;
+ tLab.position.set(-gap-14,16,0);const k3=(df>.5?'☀️ ':'🌙 ')+'Udara '+Tl.toFixed(1)+'°C';if(k3!=eK3){eK3=k3;drawSpr(tLab.userData.c,k3,Tl>=34?'#ff4d4d':Tl>=29?'#ffe600':'#6aa9ff');tLab.material.map.needsUpdate=true}
+ $('mDay').classList.toggle('on',df>=.5);$('mNight').classList.toggle('on',df<.5);
+ $('hud').textContent=(df>.5?'☀️ ':'🌙 ')+HN(H)+' · '+pt(H)+' · Udara '+S.amb+'°C · Chip '+S.temp.toFixed(0)+'°C · '+NM[md]}
+const setH=v=>{S.hr=v;$('hr').value=v;S.play=false;$('hPlay').classList.remove('on');$('hPlay').textContent='▶ Putar Hari'};
+$('mDay').onclick=()=>setH(14);$('mNight').onclick=()=>setH(23);$('mHeat').onclick=()=>{heatOn=!heatOn;$('mHeat').classList.toggle('on',heatOn)};
+function dnRender(){const f=calc().f,cl=h=>{const a=ambOf(h);return{a,tc:a+S.watt*f,r:risk(h)}},D=cl(15),N=cl(3);
+ const cell=(ic,n,o)=>`<div class="rounded-xl p-2 border border-slate-500/30"><b>${ic} ${n}</b><div class="num">Udara ${o.a}°C</div><div class="num" style="color:${heat(o.tc)}">Chip ${o.tc.toFixed(0)}°C</div><div class="num" style="color:${o.r.noise>o.r.lim?'#ff6b6b':'#39ff14'}">Bising ${o.r.noise.toFixed(0)} dB (batas ${o.r.lim})</div><div class="num">Rumah +${o.r.rise.toFixed(1)}°C → ${(o.a+o.r.rise).toFixed(1)}°C</div></div>`;
+ $('dn').innerHTML=`<div class="grid grid-cols-2 gap-2">${cell('☀️','Siang 15.00',D)}${cell('🌙','Malam 03.00',N)}</div><p class="mt-2 text-xs opacity-80">Siang: chip ${(D.tc-N.tc).toFixed(0)}°C lebih panas dibanding malam karena udara luar lebih panas, jadi pendingin bekerja lebih keras. Malam: chip lebih adem, tetapi batas bising lebih ketat dan panas buangan lebih menumpuk di sekitar rumah karena udara malam kurang bercampur.</p>`}
+$('eHome').onclick=()=>{setView('2d');EC.position.set(-S.dist/8-2,2.6,15);EO.target.set(14,5,0)};
+$('eDrone').onclick=()=>{setView('2d');EC.position.set(-42,28,52);EO.target.set(2,4,0)};
+function graph2(){const c=$('gr');if(c.width!=1400){c.width=1400;c.height=280}const x=c.getContext('2d'),w=1400,h=280,Y=v=>h-16-(v/120)*(h-32),X=i=>64+i/59*(w-80),n=S.hist.length;x.clearRect(0,0,w,h);
+ [[0,65,'rgba(57,255,20,.07)'],[65,85,'rgba(255,230,0,.08)'],[85,120,'rgba(255,42,42,.12)']].forEach(z=>{x.fillStyle=z[2];x.fillRect(64,Y(z[1]),w-64,Y(z[0])-Y(z[1]))});
+ x.font='20px JetBrains Mono,monospace';x.lineWidth=1;[0,30,60,90,120].forEach(v=>{x.strokeStyle='rgba(138,160,200,.25)';x.beginPath();x.moveTo(64,Y(v));x.lineTo(w,Y(v));x.stroke();x.fillStyle='#8aa0c8';x.fillText(v+'°',10,Y(v)+7)});
+ x.strokeStyle='#ff2a2a';x.lineWidth=2;x.setLineDash([10,6]);x.beginPath();x.moveTo(64,Y(85));x.lineTo(w,Y(85));x.stroke();x.setLineDash([]);x.fillStyle='#ff6b6b';x.fillText('Throttling 85°C',74,Y(85)-8);
+ if(n<2)return;
+ x.strokeStyle='#94a3b8';x.lineWidth=2;x.setLineDash([4,6]);x.beginPath();(S.ha||[]).forEach((a,i)=>i?x.lineTo(X(i),Y(a)):x.moveTo(X(i),Y(a)));x.stroke();x.setLineDash([]);
+ const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,'rgba(34,211,238,.35)');g.addColorStop(1,'rgba(34,211,238,0)');
+ x.beginPath();S.hist.forEach((t,i)=>i?x.lineTo(X(i),Y(t)):x.moveTo(X(i),Y(t)));x.lineTo(X(n-1),Y(0));x.lineTo(X(0),Y(0));x.closePath();x.fillStyle=g;x.fill();
+ x.lineWidth=4;x.lineJoin='round';for(let i=1;i<n;i++){x.strokeStyle=heat(S.hist[i]);x.beginPath();x.moveTo(X(i-1),Y(S.hist[i-1]));x.lineTo(X(i),Y(S.hist[i]));x.stroke()}
+ const lt=S.hist[n-1];x.fillStyle=heat(lt);x.beginPath();x.arc(X(n-1),Y(lt),8,0,7);x.fill();x.fillText(lt.toFixed(0)+'°C',Math.min(w-110,X(n-1)-30),Y(lt)-16);
+ x.fillStyle='#94a3b8';x.fillText('- - suhu udara',w-230,26)}
+/* ---------- UI ---------- */
+LAY.forEach((l,i)=>{const lb=document.createElement('label');lb.className='block';lb.innerHTML=`<input type="checkbox" checked> ${l[0]}`;
+ lb.firstChild.onchange=e=>G[i].visible=e.target.checked;$('lyr').appendChild(lb)});
+$('nav').onclick=e=>{const t=e.target.dataset.t;if(!t)return;document.querySelectorAll('.tab').forEach(s=>s.classList.toggle('act',s.id==t));
+ [...$('nav').children].forEach(b=>b.classList.toggle('on',b==e.target));if(t=='sim')size()};
+$('theme').onclick=()=>{const l=document.body.classList.toggle('light');document.documentElement.classList.toggle('dark',!l);$('theme').textContent=l?'🌙 Mode Gelap':'☀️ Mode Terang';bgc()};
+$('modes').onclick=e=>{const m=e.target.dataset.m;if(!m)return;S.mode=m;[...$('modes').children].forEach(b=>b.classList.toggle('on',b==e.target))};
+['watt','amb','spd'].forEach(k=>{const f=()=>{S[k]=+$(k).value;$({watt:'wV',amb:'aV',spd:'sV'}[k]).textContent=S[k]};$(k).oninput=f;f()});
+$('ex').oninput=()=>{S.exT=$('ex').value/100;$('exV').textContent=$('ex').value};
+function setView(v){S.view=v;$('c2d').style.display='none';R.domElement.style.display='block';ctl.enabled=v=='3d';EO.enabled=v=='2d';$('hud').style.display=v=='2d'?'block':'none';$('b3d').classList.toggle('on',v=='3d');$('b2d').classList.toggle('on',v=='2d')}
+$('b3d').onclick=()=>setView('3d');$('b2d').onclick=()=>setView('2d');
+$('pOrb').onclick=()=>{const o=AC();o.autoRotate=!o.autoRotate;$('pOrb').classList.toggle('on',o.autoRotate)};
+$('pTop').onclick=()=>{setView('3d');cam.position.set(0,9,.01)};$('pBot').onclick=()=>{setView('3d');cam.position.set(0,-9,.01)};
+$('pExp').onclick=()=>{S.exT=1;$('ex').value=100;$('exV').textContent=100};
+$('zIn').onclick=()=>AM().position.multiplyScalar(.8);$('zOut').onclick=()=>AM().position.multiplyScalar(1.25);
+$('pLab').onclick=()=>{S.labels=!S.labels;$('pLab').textContent='Label '+(S.labels?'ON':'OFF');$('pLab').classList.toggle('on',S.labels)};
+try{katex.render('T_{chip}=T_{air}+\\left(W_{chip}\\times F\\right)',$('kx'),{displayMode:true,output:'mathml',throwOnError:false})}catch(e){$('kx').textContent='Suhu Chip = Suhu Air + (Watt × F)'}
+
+/* ---------- Graph ---------- */
+function graph(){const c=$('gr'),x=c.getContext('2d'),w=c.width,h=c.height,Y=t=>h-t/120*h;x.clearRect(0,0,w,h);
+ x.strokeStyle='#ff2a2a';x.setLineDash([6,4]);x.beginPath();x.moveTo(0,Y(85));x.lineTo(w,Y(85));x.stroke();x.setLineDash([]);
+ x.fillStyle='#ff2a2a';x.font='12px JetBrains Mono';x.fillText('Throttling 85°C',6,Y(85)-4);
+ x.strokeStyle='#00f0ff';x.lineWidth=3;x.beginPath();S.hist.forEach((t,i)=>{const px=i/59*w;i?x.lineTo(px,Y(t)):x.moveTo(px,Y(t))});x.stroke()}
+
+/* ---------- Missions ---------- */
+const MS=[{n:'LLM Training Overclock',d:'Watt 1000W, pakai Liquid/Rendam, suhu < 80°C.',ok:()=>S.watt>=1000&&S.mode!='air'&&S.temp<80},
+{n:'Super Dingin Rendam',d:'Mode Rendam, beban 600W, suhu < 45°C.',ok:()=>S.mode=='imm'&&S.watt>=600&&S.temp<45},
+{n:'Gelombang Panas 35°C',d:'Air 35°C, beban 800W, suhu < 82°C.',ok:()=>S.amb>=35&&S.watt>=800&&S.temp<82}];
+const M={act:-1,p:0,done:new Set()};
+function mRender(){$('mgrid').innerHTML=MS.map((m,i)=>`<div class="card ${['','c','l'][i]}"><h3 class="text-2xl">Misi ${i+1}: ${m.n}</h3><p class="text-sm">${m.d} Bertahan 10 detik.</p>
+ <div class="num my-2" id="mp${i}">${M.done.has(i)?'✅ SELESAI':(M.act==i?M.p.toFixed(1):0)+'s / 10s'}</div>
+ <button class="btn" onclick="mToggle(${i})">${M.act==i?'Batal':'Mulai'}</button></div>`).join('');
+ $('stars').textContent=`⭐ ${M.done.size} / 3 Bintang`}
+window.mToggle=i=>{M.act=M.act==i?-1:i;M.p=0;mRender()};
+function mTick(dt){if(M.act<0)return;if(MS[M.act].ok())M.p+=dt;else M.p=0;
+ if(M.p>=10){M.done.add(M.act);M.act=-1;M.p=0;mRender()}else $('mp'+M.act).textContent=M.p.toFixed(1)+'s / 10s'}
+mRender();
+
+/* ---------- Quiz ---------- */
+const QZ=[['Rumus suhu chip yang benar?',['Suhu Air + (Watt × F)','Watt ÷ F','Suhu Air × Watt','Watt − F'],0],
+['Nilai F untuk Liquid DLC?',['0.15','0.05','0.02','0.5'],1],
+['Pendingin dengan F terkecil (terbaik)?',['Udara','Liquid DLC','Rendam Immersion','Semua sama'],2],
+['Udara, 500 W, ruang 25°C. Suhu chip?',['75°C','100°C','125°C','85°C'],1],
+['Immersion, 500 W, air 30°C. Suhu chip?',['40°C','35°C','60°C','530°C'],0],
+['Apa yang terjadi bila chip melewati 85°C?',['Thermal throttling (performa turun)','Chip makin cepat','Chip menjadi dingin','Listrik hemat'],0]];
+function qRender(){$('qz').innerHTML=QZ.map((q,i)=>`<div class="mb-3"><b>${i+1}. ${q[0]}</b>${q[1].map((o,j)=>`<label class="opt"><input type="radio" name="q${i}" value="${j}"> ${o}</label>`).join('')}</div>`).join('');$('qFb').textContent=''}
+$('qChk').onclick=()=>{let s=0;QZ.forEach((q,i)=>{const r=document.querySelector(`input[name=q${i}]:checked`);const ok=r&&+r.value==q[2];if(ok)s++;
+ document.querySelectorAll(`input[name=q${i}]`).forEach(e=>{const p=e.parentElement;p.style.background=+e.value==q[2]?'#39ff14':(e.checked?'#ff2a2a':'');p.style.color=p.style.background?'#000':''})});
+ $('qFb').textContent=`Skor: ${s}/6 — `+(s==6?'SEMPURNA! Master pendingin chip!':s>=4?'SANGAT BAGUS! Sedikit lagi.':'Perlu evaluasi ulang. Baca tab Rumus dulu.')};
+$('qRst').onclick=qRender;qRender();
+
+/* ---------- Extra ---------- */
+const PUE={air:1.5,dlc:1.2,imm:1.05},NM={air:'Udara',dlc:'Liquid DLC',imm:'Immersion'};
+function extra(t){const col=heat(t);dieTop.material.color.set(col);hl.color.set(col);hl.position.y=G[4].position.y+.4;
+ const perf=t>85?Math.max(50,100-(t-85)*2):100;$('mP').textContent=perf.toFixed(0)+'%';$('mP').style.color=perf<100?'#ff2a2a':'#39ff14';
+ const u=PUE[S.mode];$('mU').textContent=u.toFixed(2);$('mD').textContent=Math.round(S.watt*u)+' W';
+ $('mC').textContent='Rp '+Math.round(S.watt/1000*u*720*1500).toLocaleString('id-ID');
+ $('cmp').innerHTML=Object.keys(MODES).map(m=>{const tt=S.amb+S.watt*MODES[m]*(1.5-.5*S.spd/100);return `<div class="flex items-center gap-2 my-1"><span class="w-24">${NM[m]}</span><div class="flex-1 h-3 rounded bg-slate-700/50"><div style="width:${Math.min(100,tt/120*100)}%;height:100%;border-radius:4px;background:${heat(tt)}"></div></div><span class="w-16 text-right">${tt.toFixed(0)}°C</span></div>`}).join('')}
+document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{const [w,a,sp]=b.dataset.p.split(',');$('watt').value=w;$('amb').value=a;$('spd').value=sp;['watt','amb','spd'].forEach(k=>$(k).oninput())});
+$('auto').onclick=()=>{const m=['air','dlc','imm'].find(k=>S.amb+S.watt*MODES[k]*(1.5-.5*S.spd/100)<80)||'imm';document.querySelector('#modes [data-m='+m+']').click()};
+$('pTop').onclick=()=>{setView('3d');cam.position.set(0,9,.01);S.exT=.5;$('ex').value=50;$('exV').textContent=50};
+/* ---------- Galeri & Tur ---------- */
+const GW=1600,GH=1000;
+function cx(id){const c=$(id);c.width=GW;c.height=GH;return c.getContext('2d')}
+function rr(x,a,b,w,h,r){x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.closePath()}
+function bgG(x,t,sub){const g=x.createLinearGradient(0,0,GW,GH);g.addColorStop(0,'#0b1224');g.addColorStop(1,'#1b1240');x.fillStyle=g;x.fillRect(0,0,GW,GH);
+ x.strokeStyle='rgba(120,170,255,.08)';x.lineWidth=1;for(let i=0;i<GW;i+=50){x.beginPath();x.moveTo(i,0);x.lineTo(i,GH);x.stroke()}for(let j=0;j<GH;j+=50){x.beginPath();x.moveTo(0,j);x.lineTo(GW,j);x.stroke()}
+ x.textAlign='left';x.fillStyle='#e6edf7';x.font='700 48px Space Grotesk,sans-serif';x.fillText(t,50,76);x.fillStyle='#8aa0c8';x.font='26px Inter,sans-serif';x.fillText(sub,50,122)}
+function call(x,t,px,py,tx){x.strokeStyle='#22d3ee';x.lineWidth=3;x.beginPath();x.moveTo(px,py);x.lineTo(tx,py);x.stroke();
+ x.fillStyle='#ff007f';x.beginPath();x.arc(px,py,9,0,7);x.fill();x.strokeStyle='#fff';x.lineWidth=3;x.stroke();
+ x.font='600 28px Inter,sans-serif';x.textAlign='left';const w=x.measureText(t).width+26,l=tx>px,a=l?tx:tx-w;
+ x.fillStyle='rgba(7,11,20,.92)';rr(x,a,py-25,w,50,10);x.fill();x.strokeStyle='#22d3ee';x.lineWidth=2;x.stroke();x.fillStyle='#e6edf7';x.fillText(t,a+13,py+10)}
+function pcb(x,X,Y,S,c1,c2){const g=x.createLinearGradient(X-S/2,Y-S/2,X+S/2,Y+S/2);g.addColorStop(0,c1);g.addColorStop(1,c2);x.fillStyle=g;rr(x,X-S/2,Y-S/2,S,S,20);x.fill();x.strokeStyle='#d4af37';x.lineWidth=5;x.stroke()}
+function chipTop(){const x=cx('gA');bgG(x,'Chip AI: Tampak Atas','Yang terlihat dari luar: tutup logam (IHS) di atas papan hijau.');
+ const X=800,Y=570,S=620,H=420;pcb(x,X,Y,S,'#14b35a','#055a29');
+ x.fillStyle='#d9b43a';for(let i=0;i<13;i++){const o=50+i*42;x.fillRect(X-S/2+o,Y-S/2+16,24,12);x.fillRect(X-S/2+o,Y+S/2-28,24,12);x.fillRect(X-S/2+16,Y-S/2+o,12,24);x.fillRect(X+S/2-28,Y-S/2+o,12,24)}
+ const g=x.createLinearGradient(X-H/2,Y-H/2,X+H/2,Y+H/2);g.addColorStop(0,'#f1f5f9');g.addColorStop(.5,'#9aa7b8');g.addColorStop(1,'#e2e8f0');x.fillStyle=g;rr(x,X-H/2,Y-H/2,H,H,14);x.fill();x.strokeStyle='#475569';x.lineWidth=4;x.stroke();
+ x.fillStyle='#334155';x.beginPath();x.moveTo(X-H/2+8,Y-H/2+8);x.lineTo(X-H/2+70,Y-H/2+8);x.lineTo(X-H/2+8,Y-H/2+70);x.fill();
+ x.textAlign='center';x.fillStyle='#1e293b';x.font='700 96px Space Grotesk,sans-serif';x.fillText('AI-X1',X,Y+10);x.font='600 26px JetBrains Mono,monospace';x.fillText('NEURAL ACCELERATOR',X,Y+60);x.fillText('ILUSTRASI EDUKASI',X,Y+98);
+ call(x,'IHS (tutup logam)',X+130,Y-120,1150);call(x,'Papan PCB hijau',X+S/2-40,Y+120,1150);call(x,'Kapasitor SMD',X-S/2+100,Y-S/2+22,470);call(x,'Takik penanda Pin-1',X-H/2+25,Y-H/2+40,470)}
+function chipBot(){const x=cx('gB');bgG(x,'Chip AI: Tampak Bawah','Ribuan bola solder (BGA) menghubungkan chip ke motherboard.');
+ const X=800,Y=570,S=620,n=26,sp=21,o=-(n-1)*sp/2;pcb(x,X,Y,S,'#0c7a3c','#043d1c');
+ for(let i=0;i<n;i++)for(let j=0;j<n;j++){if(i>10&&i<15&&j>10&&j<15)continue;const bx=X+o+i*sp,by=Y+o+j*sp;x.fillStyle='#cbd5e1';x.beginPath();x.arc(bx,by,8,0,7);x.fill();x.fillStyle='#fff';x.beginPath();x.arc(bx-2,by-2,3,0,7);x.fill()}
+ x.fillStyle='#fff';x.beginPath();x.moveTo(X-S/2+14,Y-S/2+14);x.lineTo(X-S/2+64,Y-S/2+14);x.lineTo(X-S/2+14,Y-S/2+64);x.fill();
+ call(x,'Bola solder BGA',X+o+23*sp,Y+o+5*sp,1150);call(x,'Zona kapasitor (tengah)',X,Y,1150);call(x,'Penanda Pin-1',X-S/2+34,Y-S/2+34,470)}
+function hbm(x,a,b,w,h){x.fillStyle='#2b3350';rr(x,a,b,w,h,8);x.fill();x.fillStyle='#8aa0ff';for(let i=0;i<8;i++)x.fillRect(a+10,b+12+i*(h-24)/8,w-20,(h-24)/8-8);x.strokeStyle='#e6edf7';x.lineWidth=2;rr(x,a,b,w,h,8);x.stroke()}
+function chipDie(){const x=cx('gC');bgG(x,'Pusat Chip (Die)','Warna inti berubah mengikuti suhu di simulator: hijau aman, kuning hangat, merah overheat.');
+ const X=800,Y=570,D=560,L=X-D/2,T=Y-D/2;
+ [[L-170,T+85],[L-170,T+295],[L+D+20,T+85],[L+D+20,T+295]].forEach(p=>hbm(x,p[0],p[1],150,190));
+ let g=x.createLinearGradient(L,T,L+D,T+D);g.addColorStop(0,'#64748b');g.addColorStop(1,'#1e293b');x.fillStyle=g;rr(x,L,T,D,D,12);x.fill();x.strokeStyle='#e2e8f0';x.lineWidth=4;x.stroke();
+ x.strokeStyle='#22d3ee';x.lineWidth=6;x.beginPath();x.moveTo(L+10,Y);x.lineTo(L+D-10,Y);x.moveTo(X,T+10);x.lineTo(X,T+D-10);x.stroke();
+ for(let c=0;c<8;c++)for(let r=0;r<8;r++){const d=Math.hypot(c-3.5,r-3.5)/4.95,tc=S.temp+(1-d)*10-5;x.globalAlpha=.9;x.fillStyle=heat(tc);x.fillRect(L+28+c*64,T+28+r*64,56,56);x.globalAlpha=1;x.strokeStyle='rgba(0,0,0,.55)';x.lineWidth=3;x.strokeRect(L+28+c*64,T+28+r*64,56,56)}
+ const rg=x.createRadialGradient(X,Y,10,X,Y,260);rg.addColorStop(0,heat(S.temp)+'aa');rg.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=rg;x.fillRect(L,T,D,D);
+ call(x,'Inti hitung (core)',L+28+7*64+28,T+56,1290);call(x,'Titik terpanas: pusat die',X,Y,1190);call(x,'Memori HBM',L-95,T+180,330);
+ x.textAlign='center';x.fillStyle=heat(S.temp);x.font='700 56px JetBrains Mono,monospace';x.fillText('Suhu chip: '+S.temp.toFixed(0)+' °C',X,930)}
+function gal(){chipTop();chipBot();chipDie()}
+window.dl=(id,n)=>{const a=document.createElement('a');a.href=$(id).toDataURL('image/png');a.download=n+'.png';a.click()};
+$('nav').addEventListener('click',e=>{if(e.target.dataset.t=='gal')setTimeout(gal,60)});
+setInterval(()=>{if($('gal').classList.contains('act'))chipDie()},1000);
+if(document.fonts)document.fonts.ready.then(gal);
+function tipTxt(t){return t>=85?'Chip terlalu panas dan melambat (throttling). Coba ganti ke Liquid DLC atau Rendam, kecilkan Watt, atau naikkan kecepatan kipas/pompa.':t>=65?'Chip hangat. Masih aman, tapi mendekati batas 85°C. Turunkan Watt atau pilih pendingin cairan agar lebih adem.':'Bagus! Chip adem dan bekerja optimal. Naikkan Watt untuk melihat batas kemampuan pendinginnya.'}
+const TS=[['1. Pilih pendingin','Klik Udara, Liquid DLC, atau Rendam di Panel Kontrol. Tiap pendingin punya kemampuan berbeda.'],['2. Atur beban (Watt)','Geser slider Watt Chip. Makin besar Watt, makin panas chipnya.'],['3. Baca suhu','Lihat kartu Suhu Chip: hijau aman, kuning hangat, merah overheat. Saran otomatis muncul di bawahnya.'],['4. Bongkar chip','Geser Exploded View untuk melihat lapisan chip beserta namanya.'],['5. Lihat gambar & coba misi','Buka tab GALERI CHIP untuk gambar HD, lalu coba TANTANGAN MISI dan KUIS.']];
+let ti=0;function tour(){const k=TS[ti];$('tT').textContent=k[0];$('tD').textContent=k[1];$('tN').textContent=ti==TS.length-1?'Selesai':'Lanjut'}
+$('tourBtn').onclick=()=>{ti=0;document.querySelector('#nav [data-t=sim]').click();$('tour').style.display='block';tour()};
+$('tN').onclick=()=>{if(ti==TS.length-1)$('tour').style.display='none';else{ti++;tour()}};$('tX').onclick=()=>$('tour').style.display='none';
+$('hr').oninput=()=>S.hr=+$('hr').value;$('dist').oninput=()=>{S.dist=+$('dist').value;$('dV').textContent=S.dist};$('dist').oninput();
+$('hPlay').onclick=()=>{S.play=!S.play;$('hPlay').classList.toggle('on',S.play);$('hPlay').textContent=S.play?'⏸ Jeda':'▶ Putar Hari'};
+function clk(dt){if(S.play){S.hr=(S.hr+dt*.8)%24;$('hr').value=S.hr}const a=$('autoT').checked;$('amb').disabled=a;if(a&&S.amb!=ambOf(S.hr)){$('amb').value=ambOf(S.hr);$('amb').oninput()}$('hV').textContent=HN(S.hr)+' · '+pt(S.hr)}
+function rkRender(){const R=risk(),row=(ic,l,v,bad,n)=>`<div class="my-1"><span style="color:${bad?'#ff4d4d':'#39ff14'}">${ic} ${l}: <b class="num">${v}</b></span><div class="opacity-70 text-xs">${n}</div></div>`;
+ const bad=R.noise>R.lim||R.rise>1.5,st=R.noise>R.lim+8||R.rise>2.5?'TERGANGGU':bad?'WASPADA':'AMAN';
+ $('rk').innerHTML=row('🔊','Bising di rumah',R.noise.toFixed(0)+' dB(A)',R.noise>R.lim,'ambang '+(R.night?'malam':'siang')+' '+R.lim+' dB')+row('🌡️','Panas tambahan di sekitar rumah','+'+R.rise.toFixed(1)+' °C',R.rise>1.5,'udara luar '+S.amb+' → ±'+(S.amb+R.rise).toFixed(1)+' °C')+row('💧','Air pendingin (menara penguapan)',Math.round(R.water).toLocaleString('id-ID')+' L/hari',R.water>100000,'≈ kebutuhan '+Math.round(R.water/150).toLocaleString('id-ID')+' orang (150 L/hari)')+row('⚡','Daya fasilitas',R.P.toFixed(1)+' MW',R.P>5,'≈ '+Math.round(R.P*2000).toLocaleString('id-ID')+' rumah (rata-rata 0,5 kW)')+`<div class="font-marker text-lg mt-1">Status kenyamanan warga: ${st}</div>`}
+/* ---------- Loop ---------- */
+let last=performance.now(),acc=0;
+function loop(now){requestAnimationFrame(loop);const dt=Math.min(.1,(now-last)/1000);last=now;
+ clk(dt);const c=calc();S.temp+=(c.t-S.temp)*Math.min(1,dt*2);S.ex+=(S.exT-S.ex)*Math.min(1,dt*5);
+ G.forEach((g,i)=>g.position.y=BY[i]+i*S.ex*.6);die.material.color.set(heat(S.temp));
+ const t=S.temp,st=t<65?['OPTIMAL & ADEM','#39ff14']:t<85?['HANGAT','#ffe600']:['OVERHEAT DANGER!','#ff2a2a'];
+ $('mT').textContent=t.toFixed(1)+' °C';$('mT').style.color=st[1];$('mT').classList.toggle('animate-bounce',t>=85);
+ $('mF').textContent=c.f.toFixed(3);$('mA').textContent='+'+c.add.toFixed(1)+' °C';$('mS').textContent=st[0];$('mS').style.color=st[1];
+ $('m1').textContent=`1. Panas Tambahan = ${S.watt} × ${c.f.toFixed(3)} = ${c.add.toFixed(1)} °C`;
+ $('m2').textContent=`2. Suhu Akhir = ${S.amb} + ${c.add.toFixed(1)} = ${c.t.toFixed(1)} °C`;
+ $('ov').style.display=t>85?'flex':'none';
+ acc+=dt;if(acc>=1){acc=0;S.hist.push(t);(S.ha=S.ha||[]).push(S.amb);if(S.hist.length>60){S.hist.shift();S.ha.shift()}}
+ graph2();mTick(dt);extra(t);rkRender();dnRender();$("tip").textContent=tipTxt(t);
+ if(S.view=='3d'){ctl.update();parts(dt);R.render(scene,cam);labels()}else{EO.update();envUpdate(dt,now/1000);R.render(ES,EC)}}
+bgc();size();setView("2d");requestAnimationFrame(loop);
+</script></body></html>
